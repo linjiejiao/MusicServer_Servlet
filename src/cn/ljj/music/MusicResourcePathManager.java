@@ -3,18 +3,19 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-import javax.servlet.ServletContext;
+import cn.ljj.util.Logger;
 
-public class MusicResourcePathManager {
-	private static final String URI_PREFIX = "/MusicServer";
+public class MusicResourcePathManager implements StaticDefines {
+	private static final String TAG = MusicResourcePathManager.class.getSimpleName();
+	private static final String URI_PREFIX = "/MusicServer/private";
 	public String musicServerRoot = null;
 	
-	public MusicResourcePathManager(ServletContext context){
-		musicServerRoot = context.getInitParameter("music_page_root");
+	public MusicResourcePathManager(){
+		musicServerRoot = MUSIC_ROOT;
 	}
 
 	public String getResourcePath(String uri, String queryString){
-		System.out.println("uri=" + uri + ", queryString=" + queryString);
+		Logger.d(TAG, "uri=" + uri + ", queryString=" + queryString);
 		try {
 			uri = URLDecoder.decode(uri, "utf-8");
 			if(queryString != null){
@@ -24,9 +25,9 @@ public class MusicResourcePathManager {
 			e.printStackTrace();
 			return null;
 		}
-		System.out.println("decoded uri=" + uri + ", queryString=" + queryString);
+		Logger.d(TAG, "decoded uri=" + uri + ", queryString=" + queryString);
 		if(!uri.startsWith(URI_PREFIX)){
-			System.out.println("unSupport uri=" + uri);
+			Logger.e(TAG, "unSupport uri=" + uri);
 			return null;
 		}
 		String relativePath = null;
@@ -36,18 +37,18 @@ public class MusicResourcePathManager {
 			relativePath = "";
 		}
 		uri = uri.replace("/", File.separator);
-		System.out.println("relativePath=" + relativePath);
+		Logger.d(TAG, "relativePath=" + relativePath);
 		String musicFullPath = null;
 		if(relativePath.length() > 0 && !musicServerRoot.equals(File.separator)){
 			musicFullPath = musicServerRoot + File.separator + relativePath;
 		}else{
 			musicFullPath = musicServerRoot;
 		}
-		System.out.println("musicFullPath=" + musicFullPath);
+		Logger.d(TAG, "musicFullPath=" + musicFullPath);
 		File directFile = new File(musicFullPath);
 		if(directFile.isDirectory()){	//point to a music folder
 			String defaultFile = musicFullPath + File.separator + "index.html";
-			System.out.println("defaultFile=" + defaultFile);
+			Logger.d(TAG, "defaultFile=" + defaultFile);
 			if(new File(defaultFile).exists()){
 				return defaultFile;
 			}

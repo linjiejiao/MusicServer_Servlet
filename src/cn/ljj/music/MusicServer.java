@@ -1,79 +1,134 @@
 package cn.ljj.music;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import cn.ljj.util.ServletUtil;
+import cn.ljj.util.Logger;
+import cn.ljj.util.UrlStringUtil;
 
 /**
  * Servlet implementation class MusicServer
  */
 @WebServlet("/MusicServer")
-public class MusicServer extends HttpServlet {
+public class MusicServer extends LocalFilesBaseServlet implements StaticDefines {
+	private static final String TAG = MusicServer.class.getSimpleName();
 	private static final long serialVersionUID = 1L;
-	private MusicResourcePathManager musicResourcePathManager = null;
 
 	/**
 	 * Default constructor.
 	 */
 	public MusicServer() {
-	}
-	
-	private MusicResourcePathManager getMusicResourcePathManager() {
-		if(musicResourcePathManager == null){
-			musicResourcePathManager = new MusicResourcePathManager(getServletContext());
-		}
-		return musicResourcePathManager;
+
 	}
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String queryString = request.getQueryString();
-		String uri = request.getRequestURI();
-		String resourcePath = getMusicResourcePathManager().getResourcePath(uri, queryString);
-		if(resourcePath == null){
-			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		Logger.d(TAG, "doGet");
+		// check parameters to avoid share link
+		Cookie privateCookie = ServletUtil.getCookieByName(request, KEY_COOKIE_PRIVACY_TIMESTAMP);
+		Map<String, String> queryParameters = UrlStringUtil.parseQueryString(request.getQueryString());
+		String queryTs = queryParameters.get(KEY_PARAM_PRIVACY_TIMESTAMP);
+		if (privateCookie == null || queryTs == null || !queryTs.equals(privateCookie.getValue())) {
+			HashMap<String, String> parameters = new HashMap<>();
+			parameters.put(KEY_PARAM_ERROR_CODE, "" + ERROE_CODE_CAN_NOT_SHARE);
+			String url = UrlStringUtil.buildUrl(SCHEME, DOMAIN, URL_PATH_ERROR, parameters);
+			Logger.e(TAG, "privateCookie:" + privateCookie + ", queryTs=" + queryTs);
+			if (privateCookie != null) {
+				Logger.e(TAG, "privateCookie value:" + privateCookie.getValue());
+			}
+			response.sendRedirect(url);
 			return;
 		}
-		InputStream input = new FileInputStream(resourcePath);
-		byte[] buffer = new byte[1024];
-		int len = input.read(buffer, 0, 1024);
-		while(len > 0){
-			response.getOutputStream().write(buffer, 0, len);
-			len = input.read(buffer, 0, 1024);
+		// user, group id from cookie
+		if (queryParameters.get(KEY_PARAM_USER_ID) == null) {
+			String userId = ServletUtil.getCookieValueByName(request, KEY_COOKIE_USER_ID);
+			if (userId != null) {
+				queryParameters.put(KEY_PARAM_USER_ID, userId);
+			}
 		}
-		input.close();
+		if (queryParameters.get(KEY_PARAM_GROUP_ID) == null) {
+			String groupId = ServletUtil.getCookieValueByName(request, KEY_COOKIE_GROUP_ID);
+			if (groupId != null) {
+				queryParameters.put(KEY_PARAM_GROUP_ID, groupId);
+			}
+		}
+		// rebuild the query string from parameters
+		String queryString = UrlStringUtil.urlStringByAppendingParameters("", queryParameters);
+		String filePath = getLocalFilePath(request.getRequestURI(), queryString);
+		File file = new File(filePath);
+		if (file.exists() && file.isFile()) {
+			respondFileContent(filePath, response);
+		} else {
+			HashMap<String, String> parameters = new HashMap<>();
+			parameters.put(KEY_PARAM_ERROR_CODE, "" + ERROE_CODE_MUSIC_NOT_FOUND);
+			String url = UrlStringUtil.buildUrl(SCHEME, DOMAIN, URL_PATH_ERROR, parameters);
+			response.sendRedirect(url);
+		}
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		System.out.println("doPost");
-		doGet(request, response);
+	@Override
+	protected String getLocalFilePath(String uri, String queryString) {
+		Logger.d(TAG, "getLocalFilePath uri=" + uri + ", queryString=" + queryString);
+		String baseUrlPath = getBaseUrlPath();
+		if (uri.length() <= baseUrlPath.length()) {
+			return null;
+		}
+		String relativePath = uri.substring(baseUrlPath.length() + 1);
+		String absolutePath = null;
+		if (relativePath.length() > 0) {
+			if (!relativePath.startsWith("/")) {
+				relativePath = "/" + relativePath;
+			}
+			if (!relativePath.endsWith("/")) {
+				relativePath = relativePath + "/";
+			}
+			absolutePath = getBaseLocalPath() + relativePath.replace("/", File.separator);
+		} else {
+			absolutePath = getBaseLocalPath() + File.separator;
+		}
+		Map<String, String> parameters = UrlStringUtil.parseQueryString(queryString);
+		String music = parameters.get(KEY_PARAM_MUSIC);
+		if (music != null) {
+			// user specific file
+			String userId = parameters.get(KEY_PARAM_USER_ID);
+			if (userId != null) {
+				String tempPath = absolutePath + music + "_u-" + userId + ".html";
+				if (new File(tempPath).exists()) {
+					Logger.d(TAG, "getLocalFilePath user tempPath=" + tempPath);
+					return tempPath;
+				}
+			}
+			// group specific file
+			String groupId = parameters.get(KEY_PARAM_GROUP_ID);
+			if (groupId != null) {
+				String tempPath = absolutePath + music + "_g-" + groupId + ".html";
+				if (new File(tempPath).exists()) {
+					Logger.d(TAG, "getLocalFilePath group tempPath=" + tempPath);
+					return tempPath;
+				}
+			}
+			absolutePath = absolutePath + music + ".html";
+		}
+		Logger.d(TAG, "getLocalFilePath final absolutePath=" + absolutePath);
+		return absolutePath;
 	}
 
-	public void doGetHEader(HttpServletRequest request, HttpServletResponse response)
-			throws IOException, ServletException {
-		response.setContentType("text/html");
-		PrintWriter out = response.getWriter();
-		Enumeration<String> e = request.getHeaderNames();
-		while (e.hasMoreElements()) {
-			String name = (String) e.nextElement();
-			String value = request.getHeader(name);
-			out.println(name + " = " + value);
-			System.out.println(name + " = " + value);
-		}
+	@Override
+	protected String getBaseLocalPath() {
+		return MUSIC_ROOT;
+	}
+
+	@Override
+	protected String getBaseUrlPath() {
+		return URL_PATH_PRIVATE;
 	}
 }
