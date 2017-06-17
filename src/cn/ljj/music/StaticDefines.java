@@ -2,7 +2,7 @@ package cn.ljj.music;
 
 public interface StaticDefines {
 	public static final String SCHEME = "http";
-	public static final String DOMAIN = "liangjiajian.iask.in";
+	public static final String DOMAIN = "linjiejiao.iask.in";
 	// Url path
 	public static final String URL_PATH_SPLASH = "MusicServer/splash";
 	public static final String URL_PATH_PRIVATE = "MusicServer/private";

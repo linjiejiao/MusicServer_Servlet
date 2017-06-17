@@ -3,6 +3,7 @@ package cn.ljj.util;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
 
 public class Logger {
 	protected static final int LOG_LEVEL_VERBOSE = 0;
@@ -90,6 +91,7 @@ public class Logger {
 		if (tr != null) {
 			tr.printStackTrace();
 		}
+		java.util.logging.Logger.getGlobal().log(Level.ALL, msg, tr);
 		return 1;
 	}
 }
