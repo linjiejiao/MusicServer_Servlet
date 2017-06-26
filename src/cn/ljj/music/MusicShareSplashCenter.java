@@ -37,15 +37,21 @@ public class MusicShareSplashCenter extends HttpServlet implements StaticDefines
 			throws ServletException, IOException {
 		ServletUtil.dumpRequest(request);
 		tryMarkDownUser(request, response);
+		String stopSplash = ServletUtil.getCookieValueByName(request, KEY_COOKIE_STOP_SPLASH);
+		if ("1".equals(stopSplash)) { // stop splash
+			Logger.i(TAG, "stop splash!");
+			response.getWriter().write("stop splash!");
+			return;
+		}
 		String privacyTs = "" + System.currentTimeMillis();
 		Cookie privacyCookie = new Cookie(KEY_COOKIE_PRIVACY_TIMESTAMP, privacyTs);
 		privacyCookie.setMaxAge(30 * 60);
-		privacyCookie.setDomain(DOMAIN);
 		privacyCookie.setPath("/");
 		response.addCookie(privacyCookie);
-		Map<String, String> parameters = UrlStringUtil.parseQueryString(request.getQueryString());
-		parameters.put(KEY_PARAM_PRIVACY_TIMESTAMP, privacyTs);
-		String url = UrlStringUtil.buildUrl(SCHEME, DOMAIN, URL_PATH_PRIVATE, parameters);
+		StringBuffer sb = request.getRequestURL();
+		sb.append("?").append(request.getQueryString()).append("&").append(KEY_PARAM_PRIVACY_TIMESTAMP).append("=")
+				.append(privacyTs);
+		String url = sb.toString().replace(URL_PATH_SPLASH, URL_PATH_PRIVATE);
 		Logger.d(TAG, "sendRedirect:" + url);
 		response.sendRedirect(url);
 	}
@@ -65,7 +71,6 @@ public class MusicShareSplashCenter extends HttpServlet implements StaticDefines
 		if (userId != null) {
 			Cookie cookie = new Cookie(KEY_COOKIE_USER_ID, userId);
 			cookie.setMaxAge(Integer.MAX_VALUE);
-			cookie.setDomain(DOMAIN);
 			cookie.setPath("/");
 			response.addCookie(cookie);
 			Logger.w(TAG, "tryMarkDownUser userId=" + userId);
@@ -74,10 +79,17 @@ public class MusicShareSplashCenter extends HttpServlet implements StaticDefines
 		if (groupId != null) {
 			Cookie cookie = new Cookie(KEY_COOKIE_GROUP_ID, groupId);
 			cookie.setMaxAge(Integer.MAX_VALUE);
-			cookie.setDomain(DOMAIN);
 			cookie.setPath("/");
 			response.addCookie(cookie);
 			Logger.w(TAG, "tryMarkDownUser groupId=" + groupId);
+		}
+		String stopSplash = parameters.get(KEY_PARAM_STOP_SPLASH);
+		if (stopSplash != null) {
+			Cookie cookie = new Cookie(KEY_COOKIE_STOP_SPLASH, stopSplash);
+			cookie.setMaxAge(Integer.MAX_VALUE);
+			cookie.setPath("/");
+			response.addCookie(cookie);
+			Logger.w(TAG, "tryMarkDownUser stopSplash=" + stopSplash);
 		}
 	}
 }

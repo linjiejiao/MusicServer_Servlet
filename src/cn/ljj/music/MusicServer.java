@@ -2,7 +2,6 @@ package cn.ljj.music;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -11,8 +10,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import cn.ljj.util.ServletUtil;
 import cn.ljj.util.Logger;
+import cn.ljj.util.ServletUtil;
 import cn.ljj.util.UrlStringUtil;
 
 /**
@@ -38,9 +37,9 @@ public class MusicServer extends LocalFilesBaseServlet implements StaticDefines 
 		Map<String, String> queryParameters = UrlStringUtil.parseQueryString(request.getQueryString());
 		String queryTs = queryParameters.get(KEY_PARAM_PRIVACY_TIMESTAMP);
 		if (privateCookie == null || queryTs == null || !queryTs.equals(privateCookie.getValue())) {
-			HashMap<String, String> parameters = new HashMap<>();
-			parameters.put(KEY_PARAM_ERROR_CODE, "" + ERROE_CODE_CAN_NOT_SHARE);
-			String url = UrlStringUtil.buildUrl(SCHEME, DOMAIN, URL_PATH_ERROR, parameters);
+			StringBuffer sb = request.getRequestURL();
+			sb.append("?").append(KEY_PARAM_ERROR_CODE).append("=").append(ERROE_CODE_CAN_NOT_SHARE);
+			String url = sb.toString().replace(URL_PATH_PRIVATE, URL_PATH_ERROR);
 			Logger.e(TAG, "privateCookie:" + privateCookie + ", queryTs=" + queryTs);
 			if (privateCookie != null) {
 				Logger.e(TAG, "privateCookie value:" + privateCookie.getValue());
@@ -68,9 +67,9 @@ public class MusicServer extends LocalFilesBaseServlet implements StaticDefines 
 		if (file.exists() && file.isFile()) {
 			respondFileContent(filePath, response);
 		} else {
-			HashMap<String, String> parameters = new HashMap<>();
-			parameters.put(KEY_PARAM_ERROR_CODE, "" + ERROE_CODE_MUSIC_NOT_FOUND);
-			String url = UrlStringUtil.buildUrl(SCHEME, DOMAIN, URL_PATH_ERROR, parameters);
+			StringBuffer sb = request.getRequestURL();
+			sb.append("?").append(KEY_PARAM_ERROR_CODE).append("=").append(ERROE_CODE_MUSIC_NOT_FOUND);
+			String url = sb.toString().replace(URL_PATH_PRIVATE, URL_PATH_ERROR);
 			response.sendRedirect(url);
 		}
 	}
@@ -79,10 +78,11 @@ public class MusicServer extends LocalFilesBaseServlet implements StaticDefines 
 	protected String getLocalFilePath(String uri, String queryString) {
 		Logger.d(TAG, "getLocalFilePath uri=" + uri + ", queryString=" + queryString);
 		String baseUrlPath = getBaseUrlPath();
-		if (uri.length() <= baseUrlPath.length()) {
+		int index = uri.indexOf(baseUrlPath);
+		if (index == -1) {
 			return null;
 		}
-		String relativePath = uri.substring(baseUrlPath.length() + 1);
+		String relativePath = uri.substring(index + baseUrlPath.length());
 		String absolutePath = null;
 		if (relativePath.length() > 0) {
 			if (!relativePath.startsWith("/")) {

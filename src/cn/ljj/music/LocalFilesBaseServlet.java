@@ -72,8 +72,9 @@ public abstract class LocalFilesBaseServlet extends HttpServlet {
 	protected String getLocalFilePath(String uri, String queryString) {
 		Logger.d(TAG, "getLocalFilePath uri=" + uri + ", queryString=" + queryString);
 		String baseUrlPath = getBaseUrlPath();
-		if (uri.length() > baseUrlPath.length()) {
-			String relativePath = uri.substring(baseUrlPath.length() + 1);
+		int index = uri.indexOf(baseUrlPath);
+		if (index != -1) {
+			String relativePath = uri.substring(index + baseUrlPath.length());
 			if (relativePath.length() > 0) {
 				if (!relativePath.startsWith("/")) {
 					relativePath = "/" + relativePath;
