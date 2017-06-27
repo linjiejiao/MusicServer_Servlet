@@ -40,7 +40,9 @@ public class MusicShareSplashCenter extends HttpServlet implements StaticDefines
 		String stopSplash = ServletUtil.getCookieValueByName(request, KEY_COOKIE_STOP_SPLASH);
 		if ("1".equals(stopSplash)) { // stop splash
 			Logger.i(TAG, "stop splash!");
-			response.getWriter().write("stop splash!");
+			Map<String, String> parameters = UrlStringUtil.parseQueryString(request.getQueryString());
+			response.getWriter().write("<html><head><title>" + parameters.get(KEY_PARAM_MUSIC)
+					+ "</title><head/><body>stop splash!</body></html>");
 			return;
 		}
 		String privacyTs = "" + System.currentTimeMillis();
