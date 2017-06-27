@@ -18,7 +18,7 @@ public interface StaticDefines {
 	public static final String KEY_PARAM_GROUP_ID = "group_id";
 	public static final String KEY_PARAM_STOP_SPLASH = "stop_splash";
 	// Local path
-	public static final String MUSIC_ROOT = "/Users/liangjiajian/Servers/Music";
+	public static final String MUSIC_ROOT = System.getProperty("user.home") + "/Servers/Music";
 	public static final String MUSIC_ERROR_PAGES = MUSIC_ROOT + "/error";
 	// Error code
 	public static final int ERROE_CODE_CAN_NOT_SHARE = 401;
