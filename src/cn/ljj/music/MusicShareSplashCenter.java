@@ -51,6 +51,7 @@ public class MusicShareSplashCenter extends HttpServlet implements StaticDefines
         if ("1".equals(stopSplash)) { // stop splash
             Map<String, String> parameters = UrlStringUtil.parseQueryString(request.getQueryString());
             String title = parameters.get(KEY_PARAM_MUSIC);
+            response.setCharacterEncoding("UTF-8");
             response.getWriter().write("<html><head><title>" + title
                     + "</title><meta charset=\"utf-8\"><head/><body></body></html>");
             return;
