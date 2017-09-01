@@ -27,7 +27,6 @@ public class Logger {
 
     public static int d(String tag, String msg, Throwable tr) {
         msg = tag + ": " + msg;
-        System.out.println(msg);
         if (tr != null) {
             tr.printStackTrace();
         }
@@ -48,7 +47,6 @@ public class Logger {
 
     public static int i(String tag, String msg, Throwable tr) {
         msg = tag + ": " + msg;
-        System.out.println(msg);
         if (tr != null) {
             tr.printStackTrace();
         }
@@ -69,7 +67,6 @@ public class Logger {
 
     public static int w(String tag, String msg, Throwable tr) {
         msg = tag + ": " + msg;
-        System.out.println(msg);
         if (tr != null) {
             tr.printStackTrace();
         }
@@ -90,7 +87,6 @@ public class Logger {
 
     public static int e(String tag, String msg, Throwable tr) {
         msg = tag + ": " + msg;
-        System.out.println(msg);
         if (tr != null) {
             tr.printStackTrace();
         }
